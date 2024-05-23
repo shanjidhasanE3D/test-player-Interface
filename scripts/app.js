@@ -4,6 +4,7 @@
  * Class definitions
  * TODO: Move these to seperate files once we introduce a bundler
  */
+const playersCollectionName = "test1-playersQ";
 
 const db = firebase.firestore();
 let lastPing = 0;
@@ -62,7 +63,7 @@ async function sendConnectionRequest() {
     writeClientMessage("playerWantsToConnect")
 }
 async function setPlayerConnected() {
-    const docRef = db.collection('playersQ').doc(docRefId);
+    const docRef = db.collection(playersCollectionName).doc(docRefId);
     await docRef.update({ streamingAppConnectedToFE: true });
 }
 
@@ -73,7 +74,7 @@ function sendCloseMessage() {
 async function writeClientMessage(message) {
     try {
         // Get a reference to the document with the specified docRefId
-        const docRef = db.collection('playersQ').doc(docRefId);
+        const docRef = db.collection(playersCollectionName).doc(docRefId);
         const currentDate = new Date();
         const timestamp = currentDate.getTime();
 
@@ -2881,7 +2882,7 @@ async function insertPlayerDocument() {
     console.log(owner)
     let streamerLoaded = false;
     const response = await getInfo()
-    db.collection("playersQ").add({
+    db.collection(playersCollectionName).add({
         streamingAppConnectedToFE: false,
         appName: appName,
         owner: owner,
@@ -2927,7 +2928,7 @@ async function insertPlayerDocument() {
                         if (data.ping !== undefined) {
                             if (data.ping > lastPing) {
                                 lastPing = data.ping;
-                                const pingDocRef = db.collection('playersQ').doc(docRefId);
+                                const pingDocRef = db.collection(playersCollectionName).doc(docRefId);
                                 pingDocRef.update({ pong: Date.now() });
                             }
                         }
