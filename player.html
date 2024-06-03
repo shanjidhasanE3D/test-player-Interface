@@ -29,17 +29,18 @@
 	<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore-compat.js"></script>
 	<script>
-			// Initialize Firebase
-			const firebaseConfig = {
-				  apiKey: "AIzaSyA4Bxag_L-GQiUwEWGDe_M-ynNo8OwBDIc",
-				  authDomain: "fbstreamtest-d9d59.firebaseapp.com",
-				  projectId: "fbstreamtest-d9d59",
-				  storageBucket: "fbstreamtest-d9d59.appspot.com",
-				  messagingSenderId: "632084772510",
-				  appId: "1:632084772510:web:8f03068338541cd5222d8f",
-				  measurementId: "G-YG9TJ3B89X"
-			};
+		// Initialize Firebase
+		const firebaseConfig = {
+			apiKey: "AIzaSyA4Bxag_L-GQiUwEWGDe_M-ynNo8OwBDIc",
+			authDomain: "fbstreamtest-d9d59.firebaseapp.com",
+			projectId: "fbstreamtest-d9d59",
+			storageBucket: "fbstreamtest-d9d59.appspot.com",
+			messagingSenderId: "632084772510",
+			appId: "1:632084772510:web:8f03068338541cd5222d8f",
+			measurementId: "G-YG9TJ3B89X"
+		};
 		firebase.initializeApp(firebaseConfig);
+		var timeRecords = {};
 	</script>
 	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 	<script type="text/javascript" src="scripts/webRtcPlayer.js"></script>
@@ -300,18 +301,21 @@
 			</div>
 		</div>
 	</div>
-	<div id="waitForStreamer"><h1 style='color: white;'>Please wait...</h1></div>
+	<div id="waitForStreamer">
+		<h1 style='color: white;'>Please wait...</h1>
+	</div>
 </body>
 <script>
-    // Function to handle beforeunload event
-    function handleBeforeUnload() {
-        // Call the function from app.js to write data to Firestore
-        // sendCloseMessage();
-        // Return null or a confirmation message (some browsers might show a confirmation dialog)
-        return null;
-    }
+	// Function to handle beforeunload event
+	function handleBeforeUnload() {
+		// Call the function from app.js to write data to Firestore
+		// sendCloseMessage();
+		// Return null or a confirmation message (some browsers might show a confirmation dialog)
+		return null;
+	}
 
-    // Attach beforeunload event listener
-    window.addEventListener("beforeunload", handleBeforeUnload);
+	// Attach beforeunload event listener
+	window.addEventListener("beforeunload", handleBeforeUnload);
 </script>
+
 </html>

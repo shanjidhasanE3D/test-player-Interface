@@ -4,7 +4,11 @@
  * Class definitions
  * TODO: Move these to seperate files once we introduce a bundler
  */
-const playersCollectionName = "test1-playersQ";
+
+timeRecords.jsFileExecutionStartedAt = Date.now();
+let appName = ""
+
+const playersCollectionName = "dev-sh-playersQ";
 
 const db = firebase.firestore();
 let lastPing = 0;
@@ -65,6 +69,9 @@ async function sendConnectionRequest() {
 async function setPlayerConnected() {
     const docRef = db.collection(playersCollectionName).doc(docRefId);
     await docRef.update({ streamingAppConnectedToFE: true });
+    const humanReadableTimestamps = convertTimestampsToHumanReadable(timeRecords);
+    var timeStat = window.location.href + "\n" + appName + " -> Timestat : " + JSON.stringify(humanReadableTimestamps.timeOnlyData, null, 2)
+    postToTelegramBody(timeStat)
 }
 
 function sendCloseMessage() {
@@ -1081,6 +1088,7 @@ function showConnectOverlay() {
     startText.innerHTML = 'Click to start'.toUpperCase();
 
     setOverlay('clickableState', startText, event => {
+        timeRecords.playBtnClickedAt = Date.now();
         connect();
         startAfkWarningTimer();
     });
@@ -2724,6 +2732,10 @@ async function connect() {
 
 // Config data received from WebRTC sender via the Cirrus web server
 function onConfig(config) {
+    timeRecords.onConfigCalledAt = Date.now();
+    if (timeRecords.appLoadingStageStartedAt == undefined) {
+        timeRecords.appLoadingStageStartedAt = Date.now();
+    }
     let playerDiv = document.getElementById('player');
     let playerElement = setupWebRtcPlayer(playerDiv, config);
     resizePlayerStyle();
@@ -2855,7 +2867,7 @@ async function insertPlayerDocument() {
     // Executing the regular expression and extracting variable names and values
     var appNameMatch;
 
-    let appName = ""
+
     while ((appNameMatch = appNameRegex.exec(window.location.search)) !== null) {
         var variableName = appNameMatch[1];
         var value = appNameMatch[2];
@@ -2873,24 +2885,42 @@ async function insertPlayerDocument() {
         var value = ownerMatch[2];
         owner = value
     }
-    if (owner === "" || appName === "") {
+
+    var mIDRegex = /\?(meetingId)=(.*?)(?=\?|$)/g;
+
+    // Executing the regular expression and extracting variable names and values
+    var meetingIdMatch;
+
+    let meetingId = ""
+    while ((meetingIdMatch = mIDRegex.exec(window.location.search)) !== null) {
+        var variableName = meetingIdMatch[1];
+        var value = meetingIdMatch[2];
+        meetingId = value
+    }
+    var playerData = {}
+    if (meetingId !== "") {
+        playerData.meetingId = meetingId
+    } else if (owner === "" || appName === "") {
         alert('Please insert App Name and Owner Name in the URL like this: ?appName=App_Name?owner=Owner_Name');
 
         return
+    } else {
+        const response = await getInfo()
+        playerData = {
+            streamingAppConnectedToFE: false,
+            appName: appName,
+            owner: owner,
+            streamerBinded: false,
+            ipGeoLocationAbstractAPI: response
+        }
     }
     console.log(appName)
     console.log(owner)
     let streamerLoaded = false;
-    const response = await getInfo()
-    db.collection(playersCollectionName).add({
-        streamingAppConnectedToFE: false,
-        appName: appName,
-        owner: owner,
-        streamerBinded: false,
-        ipGeoLocationAbstractAPI: response
-    })
+    db.collection(playersCollectionName).add(playerData)
         .then((docRef) => {
             docRefId = docRef.id;
+            console.log(docRef.id);
             console.log("Document inserted into playersQ collection");
             // Listen for changes to the newly inserted document
             const unsubscribe = docRef.onSnapshot((snapshot) => {
@@ -2904,6 +2934,7 @@ async function insertPlayerDocument() {
                         console.log("Downloading Progress ==> " + data.Downloading)
                     }
                     if (data.streamerLunched != undefined && data.streamerLunched === true && !streamerLoaded) {
+                        timeRecords.streamerServerGotConnectionAt = Date.now();
                         streamerLoaded = true;
                         document.getElementById("playerUI").style.display = "block";
                         document.getElementById("waitForStreamer").style.display = "none";
@@ -2945,6 +2976,11 @@ async function insertPlayerDocument() {
 }
 
 function load() {
+
+    timeRecords.windowOnloadExecutedAt = Date.now();
+
+    console.log("Loading timeRecords " + JSON.stringify(timeRecords))
+
     document.getElementById("playerUI").style.display = "none";
     document.getElementById("waitForStreamer").style.display = "block";
     insertPlayerDocument();
@@ -2960,4 +2996,56 @@ function load() {
     // // Example response event listener that logs to console
     // addResponseEventListener('logListener', (response) => { console.log(`Received response message from streamer: "${response}"`) })
     // start(false);
+}
+
+function convertTimestampsToHumanReadable(jsonData) {
+    // Get the keys and sort them by their corresponding timestamp values
+    const sortedKeys = Object.keys(jsonData).sort((a, b) => jsonData[a] - jsonData[b]);
+
+    // Create a new object with sorted keys and human-readable timestamps
+    const humanReadableData = {};
+    const timeOnlyData = {};
+
+    sortedKeys.forEach(key => {
+        const date = new Date(jsonData[key]);
+        humanReadableData[key] = date.toString();
+        timeOnlyData[key] = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    });
+
+    // Calculate the difference between the highest and lowest timestamps
+    const lowestTimestamp = jsonData[sortedKeys[0]];
+    const highestTimestamp = jsonData[sortedKeys[sortedKeys.length - 1]];
+    const timeDifference = highestTimestamp - lowestTimestamp;
+
+    // Convert the difference to a human-readable format (e.g., milliseconds)
+    timeOnlyData['timeDifference'] = `${timeDifference} milliseconds`;
+
+    return { humanReadableData, timeOnlyData };
+}
+
+function postToTelegramBody(message, input_chat_id = -4244706164) {
+
+
+    fetch("https://notifications.eagle3dstreaming.com/message_sent",
+        {
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": JSON.stringify({
+                input_chat_id: input_chat_id,
+                message: message
+            })
+        })
+        .then(response => {
+
+            //if (isAdminDebugging == 1)
+            //  console.log(response);
+
+
+        })
+        .catch(err => {
+            console.error(err);
+        });
+
 }
