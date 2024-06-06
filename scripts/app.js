@@ -8,7 +8,7 @@
 timeRecords.jsFileExecutionStartedAt = Date.now();
 let appName = ""
 
-const playersCollectionName = "dev-sh-playersQ";
+const playersCollectionName = "test1-playersQ";
 
 const db = firebase.firestore();
 let lastPing = 0;
@@ -2886,6 +2886,18 @@ async function insertPlayerDocument() {
         owner = value
     }
 
+    var configNameRegex = /\?(configName)=(.*?)(?=\?|$)/g;
+
+    // Executing the regular expression and extracting variable names and values
+    var configNameMatch;
+
+    let configName = ""
+    while ((configNameMatch = configNameRegex.exec(window.location.search)) !== null) {
+        var variableName = configNameMatch[1];
+        var value = configNameMatch[2];
+        configName = value
+    }
+
     var mIDRegex = /\?(meetingId)=(.*?)(?=\?|$)/g;
 
     // Executing the regular expression and extracting variable names and values
@@ -2910,6 +2922,7 @@ async function insertPlayerDocument() {
             streamingAppConnectedToFE: false,
             appName: appName,
             owner: owner,
+            configName: configName,
             streamerBinded: false,
             ipGeoLocationAbstractAPI: response
         }
